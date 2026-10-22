@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Arsip Prodi Ekonomi Syariah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Custom Styling tambahan */
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #10b981;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+
+  <!-- Navbar -->
+  <nav class="bg-green-700 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <i class="fa-solid fa-folder-open text-2xl mr-3"></i>
+          <span class="font-bold text-lg sm:text-xl">Arsip Ekonomi Syariah</span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button onclick="switchTab('dashboard')" class="hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition">Dashboard</button>
+          <button onclick="switchTab('input')" class="bg-green-600 hover:bg-green-500 px-3 py-2 rounded-md text-sm font-medium transition"><i class="fa-solid fa-plus mr-1"></i> Tambah</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Loading Overlay (Global) -->
+    <div id="globalLoading" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+        <div class="loader mb-4"></div>
+        <p class="text-gray-700 font-semibold" id="loadingText">Memproses data...</p>
+      </div>
+    </div>
+
+    <!-- TAB: DASHBOARD (DAFTAR ARSIP) -->
+    <section id="tab-dashboard" class="block">
+      <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-700"><i class="fa-solid fa-table-list mr-2 text-green-600"></i> Daftar Arsip Program Studi</h2>
+          <div class="mt-4 sm:mt-0 w-full sm:w-auto">
+            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari dokumen..." class="w-full sm:w-64 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">No</th>
+                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kode / Tgl</th>
+                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Judul Dokumen</th>
+                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kategori & Tahun</th>
+                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-gray-200">
+              <!-- Data will be populated here via JS -->
+            </tbody>
+          </table>
+          <div id="emptyState" class="hidden text-center py-8 text-gray-500">
+            <i class="fa-solid fa-folder-minus text-4xl mb-3"></i>
+            <p>Belum ada data arsip.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: INPUT ARSIP -->
+    <section id="tab-input" class="hidden">
+      <div class="bg-white shadow-md rounded-lg p-6 max-w-3xl mx-auto">
+        <h2 class="text-2xl font-bold text-gray-700 mb-6"><i class="fa-solid fa-file-circle-plus mr-2 text-green-600"></i> Tambah Arsip Baru</h2>
+        
+        <form id="arsipForm" onsubmit="handleFormSubmit(event)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Kode Arsip</label>
+              <input type="text" id="inputKode" placeholder="Contoh: ES/2024/001" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tahun Akademik</label>
+              <input type="text" id="inputTahun" placeholder="Contoh: 2023/2024 Ganjil" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Judul Dokumen <span class="text-red-500">*</span></label>
+            <input type="text" id="inputJudul" required placeholder="Masukkan judul/nama dokumen" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Kategori <span class="text-red-500">*</span></label>
+              <select id="inputKategori" required class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                <option value="">Pilih Kategori...</option>
+                <!-- Categories will be populated here -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Link File (G-Drive / Cloud) <span class="text-red-500">*</span></label>
+              <input type="url" id="inputLink" required placeholder="https://drive.google.com/..." class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan Singkat</label>
+            <textarea id="inputKeterangan" rows="3" placeholder="Opsional" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="button" onclick="switchTab('dashboard')" class="mr-3 px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">Batal</button>
+            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition font-medium"><i class="fa-solid fa-save mr-2"></i>Simpan Arsip</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT -->
+  <script>
+    // ======================================================================
+    // PENTING: GANTI URL DI BAWAH INI DENGAN URL WEB APP APPS SCRIPT ANDA!
+    // ======================================================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbw65jvgwot4mLTQpeYWpKjrwWfXxVmGBcPeg-B1fwOX7IF0dO5q5ZZqg2Z5rZq9h2BSfA/exec"; 
+
+    // State management
+    let globalArsipData = [];
+
+    // Inisialisasi saat halaman dimuat
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchKategori();
+      fetchArsipData();
+    });
+
+    // Navigasi Antar Tab
+    function switchTab(tabId) {
+      document.getElementById('tab-dashboard').classList.add('hidden');
+      document.getElementById('tab-input').classList.add('hidden');
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      
+      if(tabId === 'dashboard') {
+        fetchArsipData();
+      }
+    }
+
+    // Menampilkan/Menyembunyikan Loading
+    function toggleLoading(show, text = "Memproses...") {
+      const loader = document.getElementById('globalLoading');
+      const loaderText = document.getElementById('loadingText');
+      loaderText.innerText = text;
+      if (show) loader.classList.remove('hidden');
+      else loader.classList.add('hidden');
+    }
+
+    // Helper function untuk memanggil REST API (Pengganti google.script.run)
+    async function fetchAPI(action, payload = null) {
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          // text/plain digunakan untuk menghindari blokir CORS Preflight dari browser
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+          body: JSON.stringify({ action: action, payload: payload })
+        });
+        
+        if (!response.ok) throw new Error("Jaringan bermasalah atau URL API salah.");
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching API:", error);
+        return { success: false, message: "Gagal terhubung ke server database. Periksa URL Web App Anda." };
+      }
+    }
+
+    // 1. Ambil Data Kategori dari REST API
+    async function fetchKategori() {
+      const response = await fetchAPI('getKategori');
+      if (response.success) {
+        const select = document.getElementById('inputKategori');
+        select.innerHTML = '<option value="">Pilih Kategori...</option>'; // Reset opsi
+        response.data.forEach(kat => {
+          let option = document.createElement('option');
+          option.value = kat;
+          option.textContent = kat;
+          select.appendChild(option);
+        });
+      } else {
+        console.error("Gagal memuat kategori: ", response.message);
+      }
+    }
+
+    // 2. Ambil Data Arsip dari REST API
+    async function fetchArsipData() {
+      toggleLoading(true, "Memuat data arsip dari Cloud...");
+      
+      const response = await fetchAPI('getArsip');
+      toggleLoading(false);
+
+      if (response.success) {
+        globalArsipData = response.data;
+        renderTable(globalArsipData);
+      } else {
+        Swal.fire('Error!', response.message, 'error');
+      }
+    }
+
+    // 3. Render Tabel HTML
+    function renderTable(data) {
+      const tbody = document.getElementById('tableBody');
+      const emptyState = document.getElementById('emptyState');
+      tbody.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+
+      data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-50 transition";
+        
+        // Data Fallback anti-crash
+        const kodeArsip = row.KODE_ARSIP || '-';
+        const waktuInput = row.WAKTU_INPUT || '-';
+        const judulDokumen = row.JUDUL_DOKUMEN || 'Tanpa Judul';
+        const keterangan = row.KETERANGAN || '';
+        const kategori = row.KATEGORI || '-';
+        const tahun = row.TAHUN_AKADEMIK || '-';
+        const link = row.LINK_FILE || '#';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 border-b">${index + 1}</td>
+          <td class="py-3 px-4 border-b">
+            <span class="font-semibold text-gray-800">${kodeArsip}</span><br>
+            <span class="text-xs text-gray-500">${waktuInput}</span>
+          </td>
+          <td class="py-3 px-4 border-b">
+            <div class="font-medium text-blue-700">${judulDokumen}</div>
+            <div class="text-sm text-gray-500 truncate max-w-xs" title="${keterangan}">${keterangan}</div>
+          </td>
+          <td class="py-3 px-4 border-b">
+            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 rounded-full mb-1">${kategori}</span><br>
+            <span class="text-sm text-gray-600"><i class="fa-regular fa-calendar mr-1"></i>${tahun}</span>
+          </td>
+          <td class="py-3 px-4 border-b text-center">
+            <a href="${link}" target="_blank" class="text-blue-500 hover:text-blue-700 mr-3" title="Buka Dokumen">
+              <i class="fa-solid fa-arrow-up-right-from-square text-lg"></i>
+            </a>
+            <button onclick="confirmDelete('${row.ID}')" class="text-red-500 hover:text-red-700" title="Hapus Dokumen">
+              <i class="fa-solid fa-trash-can text-lg"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 4. Fitur Pencarian Tabel
+    function searchTable() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const filteredData = globalArsipData.filter(item => {
+        const judul = String(item.JUDUL_DOKUMEN || '').toLowerCase();
+        const kode = String(item.KODE_ARSIP || '').toLowerCase();
+        const kategori = String(item.KATEGORI || '').toLowerCase();
+        
+        return (
+          judul.includes(input) ||
+          kode.includes(input) ||
+          kategori.includes(input)
+        );
+      });
+      renderTable(filteredData);
+    }
+
+    // 5. Submit Form Tambah Arsip
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const payload = {
+        kodeArsip: document.getElementById('inputKode').value,
+        tahunAkademik: document.getElementById('inputTahun').value,
+        judul: document.getElementById('inputJudul').value,
+        kategori: document.getElementById('inputKategori').value,
+        linkFile: document.getElementById('inputLink').value,
+        keterangan: document.getElementById('inputKeterangan').value
+      };
+
+      toggleLoading(true, "Menyimpan arsip...");
+
+      const response = await fetchAPI('addArsip', payload);
+      toggleLoading(false);
+
+      if (response.success) {
+        Swal.fire('Berhasil!', response.message, 'success').then(() => {
+          document.getElementById('arsipForm').reset();
+          switchTab('dashboard');
+        });
+      } else {
+        Swal.fire('Gagal!', response.message, 'error');
+      }
+    }
+
+    // 6. Konfirmasi & Hapus Data
+    function confirmDelete(id) {
+      Swal.fire({
+        title: 'Hapus Arsip?',
+        text: "Data yang dihapus tidak dapat dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          executeDelete(id);
+        }
+      });
+    }
+
+    async function executeDelete(id) {
+      toggleLoading(true, "Menghapus data...");
+      
+      const response = await fetchAPI('deleteArsip', id);
+      toggleLoading(false);
+
+      if (response.success) {
+        Swal.fire('Terhapus!', response.message, 'success');
+        fetchArsipData(); // Refresh table dari Cloud
+      } else {
+        Swal.fire('Gagal!', response.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
